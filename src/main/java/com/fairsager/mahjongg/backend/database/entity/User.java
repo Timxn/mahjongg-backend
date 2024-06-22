@@ -1,7 +1,10 @@
 package com.fairsager.mahjongg.backend.database.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.util.Date;
@@ -9,8 +12,14 @@ import java.util.UUID;
 
 @Data
 @Entity
+@NoArgsConstructor
 @Table(name = "app_user")
 public class User {
+
+    public User(UUID createdBy) {
+        this.registered = new Date();
+        this.createdBy = createdBy;
+    }
 
     @Id
     @UuidGenerator
@@ -23,6 +32,7 @@ public class User {
 
     private String avatar;
 
+    @Setter(AccessLevel.NONE)
     private Date registered;
     private Date lastSeen;
 
@@ -31,6 +41,9 @@ public class User {
 
     private String passwordHash;
     private String salt;
+
+    @Setter(AccessLevel.NONE)
+    private UUID createdBy;
 
     public enum Role {
         USER,
