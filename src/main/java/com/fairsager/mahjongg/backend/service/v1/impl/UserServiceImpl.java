@@ -9,11 +9,15 @@ import com.fairsager.mahjongg.backend.service.v1.api.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+
+import static com.fairsager.mahjongg.backend.utils.Validator.validateString;
+import static com.fairsager.mahjongg.backend.utils.Validator.validateUUID;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -23,22 +27,18 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserModel getUserByUsername(String username) {
-        if (username.trim().isBlank())
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "Username cannot be empty", getClass());
+        validateString(username, "Username cannot be empty", getClass());
         User user = userRepository.findByUsername(username.trim());
         if (user == null)
             throw new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass());
-        return c2UserModel(user);
+        return convertToUserModel(user);
     }
 
     @Override
     public UserModel getUserByUserId(UUID userId) {
-        if (userId == null)
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "User ID cannot be empty", getClass());
-        User user = userRepository.findByUserId(userId);
-        if (user == null)
-            throw new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass());
-        return c2UserModel(user);
+        validateUUID(userId, "User ID cannot be empty", getClass());
+        User user = userRepository.findById(userId).orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass()));
+        return convertToUserModel(user);
     }
 
     @Override
@@ -46,45 +46,44 @@ public class UserServiceImpl implements UserService {
         List<User> users = userRepository.findByUsernameContainingOrDisplayNameContaining(query.trim(), query.trim());
         List<UserShortModel> response = new ArrayList<>();
         for (User user : users) {
-            response.add(c2UserShortModel(user));
+            response.add(convertToUserShortModel(user));
         }
         return response;
     }
 
     @Override
+    @Transactional
     public void createUser(UUID creatorId) {
-        if (creatorId == null)
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "Creator ID cannot be empty", getClass());
+        validateUUID(creatorId, "Creator ID cannot be empty", getClass());
         userRepository.save(new User(creatorId));
     }
 
     @Override
     public String getSalt(String username) {
-        if (username.trim().isBlank())
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "Username cannot be empty", getClass());
+        validateString(username, "Username cannot be empty", getClass());
         User user = userRepository.findByUsername(username.trim());
+        if (user == null)
+            throw new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass());
         return user.getSalt();
     }
 
     @Override
+    @Transactional
     public void resetPassword(UUID userId) {
-        if (userId == null)
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "User ID cannot be empty", getClass());
-        User user = userRepository.findByUserId(userId);
+        validateUUID(userId, "User ID cannot be empty", getClass());
+        User user = userRepository.findById(userId).orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass()));
         user.setPasswordHash(null);
         user.setSalt(null);
         userRepository.save(user);
     }
 
     @Override
+    @Transactional
     public void changePassword(UUID userId, String newPassword, String newSalt) {
-        if (userId == null)
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "User ID cannot be empty", getClass());
-        if (newPassword.trim().isBlank())
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "New password cannot be empty", getClass());
-        if (newSalt.trim().isBlank())
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "New salt cannot be empty", getClass());
-        User user = userRepository.findByUserId(userId);
+        validateUUID(userId, "User ID cannot be empty", getClass());
+        validateString(newPassword, "New password cannot be empty", getClass());
+        validateString(newSalt, "New salt cannot be empty", getClass());
+        User user = userRepository.findById(userId).orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass()));
         user.setPasswordHash(newPassword);
         user.setSalt(newSalt);
         user.setLastSeen(new Date());
@@ -92,12 +91,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void editUser(UserModel userModel) {
-        if (userModel.getUserId() == null)
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "User ID cannot be empty", getClass());
-        if (userModel.getUsername().trim().isBlank())
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "Username cannot be empty", getClass());
-        User user = userRepository.findByUserId(userModel.getUserId());
+        validateUUID(userModel.getUserId(), "User ID cannot be empty", getClass());
+        validateString(userModel.getUsername(), "Username cannot be empty", getClass());
+        User user = userRepository.findById(userModel.getUserId()).orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass()));
         user.setUsername(userModel.getUsername().trim());
         user.setDisplayName(userModel.getDisplayName().trim());
         user.setBiography(userModel.getBiography().trim());
@@ -105,7 +103,7 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    private UserModel c2UserModel(User user) {
+    private UserModel convertToUserModel(User user) {
         UserModel response = new UserModel();
         response.setUserId(user.getUserId());
         response.setUsername(user.getUsername());
@@ -117,7 +115,7 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 
-    private UserShortModel c2UserShortModel(User user) {
+    private UserShortModel convertToUserShortModel(User user) {
         UserShortModel response = new UserShortModel();
         response.setUserId(user.getUserId());
         response.setUsername(user.getUsername());
