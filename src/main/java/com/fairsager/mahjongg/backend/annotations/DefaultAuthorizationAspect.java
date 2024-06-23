@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
+import java.util.UUID;
 
 @Aspect
 @Component
@@ -35,24 +36,24 @@ public class DefaultAuthorizationAspect {
                     throw new ServiceException(HttpStatus.FORBIDDEN, "Developer rights required", "Contact a developer for help", getClass());
                 break;
             case OWN:
-                if (!session.getUsername().equals(extractUsernameFromRequest(joinPoint)))
-                    throw new ServiceException(HttpStatus.FORBIDDEN, "You can only edit your own data", getClass());
+                if (!session.getUserId().equals(extractUserIdFromRequest(joinPoint)))
+                    throw new ServiceException(HttpStatus.FORBIDDEN, "This is not your resource", getClass());
                 break;
         }
     }
 
-    private String extractUsernameFromRequest(JoinPoint joinPoint) {
-        String paramUsername = request.getParameter("username");
-        if (paramUsername != null) {
-            return paramUsername;
+    private UUID extractUserIdFromRequest(JoinPoint joinPoint) {
+        String paramUUID = request.getParameter("userId");
+        if (paramUUID != null) {
+            return UUID.fromString(paramUUID);
         }
 
         for (Object arg : joinPoint.getArgs()) {
             if (arg != null) {
                 try {
-                    Field field = arg.getClass().getDeclaredField("username");
+                    Field field = arg.getClass().getDeclaredField("userId");
                     field.setAccessible(true);
-                    return (String) field.get(arg);
+                    return (UUID) field.get(arg);
                 } catch (NoSuchFieldException | IllegalAccessException ignored) {
                 }
             }
