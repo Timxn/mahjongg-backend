@@ -76,4 +76,9 @@ public class UserController {
     public ResponseEntity<?> editUser(@RequestBody UserModel userModel) {
         return new ResponseEntity<>(userService.editUser(userModel), HttpStatus.OK);
     }
+
+    @GetMapping(path = "usernameExists")
+    public ResponseEntity<?> usernameExists(@RequestParam(name = "username") String username) {
+        return new ResponseEntity<>(userService.usernameExists(username), HttpStatus.OK);
+    }
 }

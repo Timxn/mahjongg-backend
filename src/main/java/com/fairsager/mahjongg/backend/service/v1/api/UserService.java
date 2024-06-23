@@ -23,4 +23,6 @@ public interface UserService {
     void changePassword(String username, String newPassword, String newSalt);
 
     UserModel editUser(UserModel userModel);
+
+    Boolean usernameExists(String username);
 }

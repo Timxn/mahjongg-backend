@@ -13,4 +13,6 @@ public interface UserRepository extends CrudRepository<User, UUID> {
     User findByUsername(String username);
 
     List<User> findByUsernameContainingOrDisplayNameContaining(String query, String query2);
+
+    Boolean existsByUsername(String username);
 }

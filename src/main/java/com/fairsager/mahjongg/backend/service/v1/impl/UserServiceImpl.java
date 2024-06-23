@@ -97,12 +97,18 @@ public class UserServiceImpl implements UserService {
         validateUUID(userModel.getUserId(), "User ID cannot be empty", getClass());
         validateString(userModel.getUsername(), "Username cannot be empty", getClass());
         User user = userRepository.findById(userModel.getUserId()).orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass()));
-        user.setUsername(userModel.getUsername().trim());
+        user.setUsername(userModel.getUsername().trim().toLowerCase());
         user.setDisplayName(userModel.getDisplayName().trim());
         user.setBiography(userModel.getBiography().trim());
         user.setLastSeen(new Date());
         userRepository.save(user);
         return convertToUserModel(user);
+    }
+
+    @Override
+    public Boolean usernameExists(String username) {
+        validateString(username, "Username cannot be empty", getClass());
+        return userRepository.existsByUsername(username.trim().toLowerCase());
     }
 
     private UserModel convertToUserModel(User user) {
