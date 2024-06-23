@@ -16,5 +16,5 @@ public interface UserRepository extends CrudRepository<User, UUID> {
 
     Boolean existsByUsername(String username);
 
-    Boolean existsByUserIdAndUsernameIsEmpty(UUID userId);
+    Boolean existsByUserIdAndUsernameIsNotEmpty(UUID userId);
 }

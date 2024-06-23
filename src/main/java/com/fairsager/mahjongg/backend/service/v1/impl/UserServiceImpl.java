@@ -114,7 +114,7 @@ public class UserServiceImpl implements UserService {
     public UserModel registerUser(UserModel userModel) {
         validateUUID(userModel.getUserId(), "User ID cannot be empty", getClass());
         validateUsername(userModel.getUsername(), getClass());
-        if (!userRepository.existsByUserIdAndUsernameIsEmpty(userModel.getUserId()))
+        if (userRepository.existsByUserIdAndUsernameIsNotEmpty(userModel.getUserId()))
             throw new ServiceException(HttpStatus.FORBIDDEN, "User already registered", getClass());
         if (userRepository.existsByUsername(userModel.getUsername()))
             throw new ServiceException(HttpStatus.FORBIDDEN, "Username already exists", getClass());
