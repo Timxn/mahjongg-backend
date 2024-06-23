@@ -17,4 +17,11 @@ public class Validator {
             throw new ServiceException(HttpStatus.BAD_REQUEST, errorMessage, clazz);
         }
     }
+
+    public static void validateUsername(String username, Class<?> clazz) {
+        validateString(username, "Username is required", clazz);
+        if (username.length() < 3 || username.length() > 20) {
+            throw new ServiceException(HttpStatus.BAD_REQUEST, "Username must be between 3 and 20 characters", clazz);
+        }
+    }
 }

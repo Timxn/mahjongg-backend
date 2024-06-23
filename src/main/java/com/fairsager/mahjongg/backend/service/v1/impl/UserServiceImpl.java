@@ -15,8 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import static com.fairsager.mahjongg.backend.utils.Validator.validateString;
-import static com.fairsager.mahjongg.backend.utils.Validator.validateUUID;
+import static com.fairsager.mahjongg.backend.utils.Validator.*;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -95,7 +94,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserModel editUser(UserModel userModel) {
         validateUUID(userModel.getUserId(), "User ID cannot be empty", getClass());
-        validateString(userModel.getUsername(), "Username cannot be empty", getClass());
+        validateUsername(userModel.getUsername(), getClass());
         User user = userRepository.findById(userModel.getUserId()).orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass()));
         user.setUsername(userModel.getUsername().trim().toLowerCase());
         user.setDisplayName(userModel.getDisplayName().trim());
