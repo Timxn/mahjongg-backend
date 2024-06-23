@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -29,7 +28,6 @@ public class DefaultAuthenticationAspect {
     private HttpServletRequest request;
 
     @Before("@annotation(defaultAuthentication)")
-    @Transactional
     public void validateSession(JoinPoint joinPoint, DefaultAuthentication defaultAuthentication) {
         if (request == null) {
             LOG.error("Failed to validate Controller Session call. No Http servlet request provided.");

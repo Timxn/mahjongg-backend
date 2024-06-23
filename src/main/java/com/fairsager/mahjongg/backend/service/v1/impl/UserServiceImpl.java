@@ -9,7 +9,6 @@ import com.fairsager.mahjongg.backend.service.v1.api.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -52,10 +51,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
-    public void createUser(UUID creatorId) {
+    public UUID createUser(UUID creatorId) {
         validateUUID(creatorId, "Creator ID cannot be empty", getClass());
-        userRepository.save(new User(creatorId));
+        User user = new User(creatorId);
+        userRepository.save(user);
+        return user.getUserId();
     }
 
     @Override
@@ -68,7 +68,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
     public void resetPassword(UUID userId) {
         validateUUID(userId, "User ID cannot be empty", getClass());
         User user = userRepository.findById(userId).orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass()));
@@ -78,12 +77,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
-    public void changePassword(UUID userId, String newPassword, String newSalt) {
-        validateUUID(userId, "User ID cannot be empty", getClass());
+    public void changePassword(String username, String newPassword, String newSalt) {
+        validateString(username, "Username cannot be empty", getClass());
         validateString(newPassword, "New password cannot be empty", getClass());
         validateString(newSalt, "New salt cannot be empty", getClass());
-        User user = userRepository.findById(userId).orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass()));
+        User user = userRepository.findByUsername(username);
+        if (user == null)
+            throw new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass());
+        if (user.getPasswordHash() != null && !user.getPasswordHash().isBlank() && user.getSalt() != null && !user.getSalt().isBlank())
+            throw new ServiceException(HttpStatus.FORBIDDEN, "The password has already been set", getClass());
         user.setPasswordHash(newPassword);
         user.setSalt(newSalt);
         user.setLastSeen(new Date());
@@ -91,8 +93,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
-    public void editUser(UserModel userModel) {
+    public UserModel editUser(UserModel userModel) {
         validateUUID(userModel.getUserId(), "User ID cannot be empty", getClass());
         validateString(userModel.getUsername(), "Username cannot be empty", getClass());
         User user = userRepository.findById(userModel.getUserId()).orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass()));
@@ -101,6 +102,7 @@ public class UserServiceImpl implements UserService {
         user.setBiography(userModel.getBiography().trim());
         user.setLastSeen(new Date());
         userRepository.save(user);
+        return convertToUserModel(user);
     }
 
     private UserModel convertToUserModel(User user) {

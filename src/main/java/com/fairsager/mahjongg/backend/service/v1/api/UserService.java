@@ -14,13 +14,13 @@ public interface UserService {
 
     List<UserShortModel> searchUsers(String query);
 
-    void createUser(UUID creatorId);
+    UUID createUser(UUID creatorId);
 
     String getSalt(String username);
 
     void resetPassword(UUID userId);
 
-    void changePassword(UUID userId, String newPassword, String newSalt);
+    void changePassword(String username, String newPassword, String newSalt);
 
-    void editUser(UserModel userModel);
+    UserModel editUser(UserModel userModel);
 }
