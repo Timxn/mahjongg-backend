@@ -6,6 +6,7 @@ import com.fairsager.mahjongg.backend.exception.ServiceException;
 import com.fairsager.mahjongg.backend.models.v1.user.UserModel;
 import com.fairsager.mahjongg.backend.models.v1.user.UserShortModel;
 import com.fairsager.mahjongg.backend.service.v1.api.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    HttpServletRequest request;
 
     @Override
     public UserModel getUserByUsername(String username) {
@@ -95,6 +99,29 @@ public class UserServiceImpl implements UserService {
     public UserModel editUser(UserModel userModel) {
         validateUUID(userModel.getUserId(), "User ID cannot be empty", getClass());
         validateUsername(userModel.getUsername(), getClass());
+        if (request.getSession().getAttribute("username") != userModel.getUsername() && userRepository.existsByUsername(userModel.getUsername()))
+            throw new ServiceException(HttpStatus.FORBIDDEN, "Username already exists", getClass());
+        return setUser(userModel);
+    }
+
+    @Override
+    public Boolean usernameExists(String username) {
+        validateString(username, "Username cannot be empty", getClass());
+        return userRepository.existsByUsername(username.trim().toLowerCase());
+    }
+
+    @Override
+    public UserModel registerUser(UserModel userModel) {
+        validateUUID(userModel.getUserId(), "User ID cannot be empty", getClass());
+        validateUsername(userModel.getUsername(), getClass());
+        if (!userRepository.existsByUserIdAndUsernameIsEmpty(userModel.getUserId()))
+            throw new ServiceException(HttpStatus.FORBIDDEN, "User already registered", getClass());
+        if (userRepository.existsByUsername(userModel.getUsername()))
+            throw new ServiceException(HttpStatus.FORBIDDEN, "Username already exists", getClass());
+        return setUser(userModel);
+    }
+
+    private UserModel setUser(UserModel userModel) {
         User user = userRepository.findById(userModel.getUserId()).orElseThrow(() -> new ServiceException(HttpStatus.NOT_FOUND, "User not found", getClass()));
         user.setUsername(userModel.getUsername().trim().toLowerCase());
         user.setDisplayName(userModel.getDisplayName().trim());
@@ -102,12 +129,6 @@ public class UserServiceImpl implements UserService {
         user.setLastSeen(new Date());
         userRepository.save(user);
         return convertToUserModel(user);
-    }
-
-    @Override
-    public Boolean usernameExists(String username) {
-        validateString(username, "Username cannot be empty", getClass());
-        return userRepository.existsByUsername(username.trim().toLowerCase());
     }
 
     private UserModel convertToUserModel(User user) {

@@ -81,4 +81,9 @@ public class UserController {
     public ResponseEntity<?> usernameExists(@RequestParam(name = "username") String username) {
         return new ResponseEntity<>(userService.usernameExists(username), HttpStatus.OK);
     }
+
+    @PostMapping(path = "register")
+    public ResponseEntity<?> registerUser(@RequestBody UserModel userModel) {
+        return new ResponseEntity<>(userService.registerUser(userModel), HttpStatus.CREATED);
+    }
 }

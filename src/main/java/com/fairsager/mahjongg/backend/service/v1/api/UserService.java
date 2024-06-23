@@ -25,4 +25,6 @@ public interface UserService {
     UserModel editUser(UserModel userModel);
 
     Boolean usernameExists(String username);
+
+    UserModel registerUser(UserModel userModel);
 }
